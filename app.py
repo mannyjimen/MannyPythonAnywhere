@@ -7,6 +7,7 @@ from werkzeug.serving import run_simple
 from lab9.app import app as lab9_app
 from lab10.app import app as lab10_app
 from lab11.app import app as lab11_app
+from WardrobeProject.app import app as wardrobe_app
 
 app = Flask(__name__)
 
@@ -19,7 +20,8 @@ def home():
 application = DispatcherMiddleware(app, {
     '/lab9': lab9_app,
     '/lab10': lab10_app,
-    '/lab11': lab11_app
+    '/lab11': lab11_app,
+    '/wardrobeProject': wardrobe_app,
 })
 
 if __name__ == "__main__":

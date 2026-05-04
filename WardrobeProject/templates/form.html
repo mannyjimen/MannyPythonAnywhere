@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add an item of clothing!</title>
+</head>
+<body>
+    <h2>Enter clothing item information</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <p>
+            {{ form.item_name.label }}
+            {{ form.item_name(size=40) }}
+        </p>
+
+        <p>
+            {{ form.category_name.label }}
+            {{ form.category_name(size=40) }}
+        </p>
+
+        <p>
+            {{ form.brand_name.label }}
+            {{ form.brand_name(size=40) }}
+        </p>
+
+        <p>
+            {{ form.color_name.label }}
+            {{ form.color_name(size=40) }}
+        </p>
+        
+        <p>
+            {{ form.item_is_special.label }}
+            {{ form.item_is_special(size=40) }}
+        </p>
+
+        <p>
+            {{ form.item_is_dirty.label }}
+            {{ form.item_is_dirty(size=40) }}
+        </p>
+
+        <p>{{ form.submit() }}</p>
+    </form>
+
+</body>
+</html>
