@@ -10,7 +10,10 @@ from wtforms.validators import DataRequired
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'wardrobeProject_secret_key'
 
-conn = sqlite3.connect("myWardrobe.db")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "myWardrobe.db")
+
+conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 
 def init_db():
