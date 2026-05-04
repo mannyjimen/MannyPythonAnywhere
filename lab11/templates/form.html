@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Form</title>
+</head>
+<body>
+    <h1>Lab 11, Manuel Jimenez</h1>
+    <h2>Enter Your Information</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <p>
+            {{ form.users_first_name.label }}
+            {{ form.users_first_name(size=40) }}
+        </p>
+
+        <p>
+            {{ form.users_last_name.label }}
+            {{ form.users_last_name(size=40) }}
+        </p>
+
+        <p>
+            {{ form.users_email.label }}
+            {{ form.users_email(size=40) }}
+        </p>
+
+        <p>
+            {{ form.users_college.label }}
+            {{ form.users_college(size=40) }}
+        </p>
+
+        <p>{{ form.submit() }}</p>
+    </form>
+
+</body>
+</html>
