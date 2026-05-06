@@ -42,9 +42,9 @@ def init_db():
                       user_id INTEGER REFERENCES User(user_id),
                       item_name TEXT NOT NULL UNIQUE,
                       wardrobe_name TEXT REFERENCES Wardrobe(wardrobe_name),
-                      category_name TEXT REFERENCES Category(category_name),
-                      brand_name TEXT REFERENCES Brand(brand_name),
-                      color_name TEXT REFERENCES Color(color_name)
+                      category_name TEXT,
+                      brand_name TEXT,
+                      color_name TEXT
                       );
                       """)
 
@@ -55,7 +55,7 @@ class ItemForm(FlaskForm):
     item_name = StringField("Item Name", validators=[DataRequired()])
 
     #this select field neeeds a query
-    wardrobe_name = StringField("Select Wardrobe")
+    wardrobe_name = SelectField("Select Wardrobe", choices = [])
     
     #these can get away without query since constant list always
     category_name = SelectField("Select Category", choices=[('Shirt', 'Shirt'), \
@@ -97,9 +97,33 @@ def home():
 def addItem():
     form = ItemForm()
 
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT wardrobe_name FROM Wardrobe")
+        rows = cur.fetchall()
+
+    form.wardrobe_name.choices = [(row[0], row[0]) for row in rows]
+
     if form.validate_on_submit():
-        return redirect(url_for("../"))
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                user_id = 0
+                item_name = form.item_name.data
+                wardrobe_name = form.wardrobe_name.data
+                category_name = form.category_name.data
+                brand_name = form.brand_name.data
+                color_name = form.color_name.data
+
+                cur = conn.cursor()
+                cur.execute("""
+                            INSERT INTO Item 
+                            (user_id, item_name, wardrobe_name, category_name, brand_name, color_name)
+                            VALUES (?, ?, ?, ?, ?, ?);""", (user_id, item_name, wardrobe_name, category_name, brand_name, color_name))
+                print("added new item successfully")
+        except sqlite3.IntegrityError:
+            return "error: item with chosen name already exists"
     return render_template("form.html", form=form)
+
 
 @app.route("/addWardrobe", methods=["GET", "POST"])
 def addWardrobe():
@@ -121,6 +145,10 @@ def addWardrobe():
 
 
     return render_template("wardrobe_form.html", form=form)
+
+def getAllWardrobes():
+    cur.execute("SELECT * FROM Wardrobe;")
+    return cur.fetchall()
 
 if __name__ == "__main__":
     app.run(use_debugger=True)
