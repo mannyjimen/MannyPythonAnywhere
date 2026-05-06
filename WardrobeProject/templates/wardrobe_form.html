@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add a Wardrobe!</title>
+</head>
+<body>
+    <h2>Enter name for wardrobe here:</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <p>
+            {{ form.wardrobe_name.label }}
+            {{ form.wardrobe_name(size=40) }}
+        </p>
+
+        <p>{{ form.submit() }}</p>
+    </form>
+
+</body>
+</html>

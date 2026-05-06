@@ -33,51 +33,8 @@ def init_db():
                       user_last_name TEXT
                       );
 
-                      CREATE TABLE Category (
-                      category_name TEXT PRIMARY KEY
-                      );
-
-                      INSERT INTO Category (category_name)
-                      VALUES
-                      ('Shirt'),
-                      ('Hoodie'),
-                      ('Sweater'),
-                      ('Pants'),
-                      ('Shorts'),
-                      ('Socks'),
-                      ('Other');
-
-                      CREATE TABLE Brand (
-                      brand_name TEXT PRIMARY KEY
-                      );
-
-                      INSERT INTO Brand (brand_name)
-                      VALUES
-                      ('Nike'),
-                      ('Adidas'),
-                      ('Reebok'),
-                      ('H&M'),
-                      ('Hollister'),
-                      ('Uniqlo'),
-                      ('Other');
-
-                      CREATE TABLE Color (
-                      color_name TEXT PRIMARY KEY
-                      );
-
-                      INSERT INTO Color (color_name)
-                      VALUES
-                      ('Black'),
-                      ('White'),
-                      ('Grey'),
-                      ('Red'),
-                      ('Blue'),
-                      ('Green'),
-                      ('Brown'),
-                      ('Other');
-
                       CREATE TABLE Wardrobe (
-                      wardrobe_name VARCHAR PRIMARY KEY
+                      wardrobe_name TEXT PRIMARY KEY
                       );
 
                       CREATE TABLE Item (
@@ -130,6 +87,7 @@ class ItemForm(FlaskForm):
 
 class WardrobeForm(FlaskForm):
     wardrobe_name = StringField("Enter name for your new Wardrobe!")
+    submit = SubmitField("Submit")
 
 @app.route("/")
 def home():
@@ -139,9 +97,30 @@ def home():
 def addItem():
     form = ItemForm()
 
-    # if form.validate_on_submit():
-    #     return redirect(url_for("/"))
+    if form.validate_on_submit():
+        return redirect(url_for("../"))
     return render_template("form.html", form=form)
+
+@app.route("/addWardrobe", methods=["GET", "POST"])
+def addWardrobe():
+    form = WardrobeForm()
+
+    if form.validate_on_submit():
+        wardrobe_name = form.wardrobe_name.data
+        user_id = 0
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cur = conn.cursor()
+                cur.execute("""
+                            INSERT INTO Wardrobe (wardrobe_name) 
+                            VALUES (?);
+                            """, (wardrobe_name,))
+                print("added new wardrobe successfully")
+        except sqlite3.IntegrityError:
+            return "error: wardrobe with chosen name already exists"
+
+
+    return render_template("wardrobe_form.html", form=form)
 
 if __name__ == "__main__":
     app.run(use_debugger=True)
