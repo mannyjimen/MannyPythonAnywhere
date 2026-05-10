@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Move item</title>
+</head>
+<body>
+    <h2>Moving item: {{ item.item_name }}</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <p>
+            {{ form.wardrobe_name.label }}
+            {{ form.wardrobe_name() }}
+        </p>
+
+        <p>{{ form.submit() }}</p>
+    </form>
+
+</body>
+</html>

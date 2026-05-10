@@ -32,7 +32,7 @@
             <td> {{ row["brand_name"]}} </td>
             <td> {{ row["color_name"]}} </td>
             <td>
-                <a href="{{ url_for('moveItem', item_id = item_id) }}"></a>
+                <a href="{{ url_for('moveItem', item_id = row["item_id"]) }}">Move</a>
             </td>
         </tr>
         {% endfor %}

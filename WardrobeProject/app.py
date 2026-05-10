@@ -20,24 +20,17 @@ def init_db():
     cur.executescript("""
                       PRAGMA foreign_keys = ON;
 
-                      DROP TABLE IF EXISTS Item;
-                      DROP TABLE IF EXISTS Wardrobe;
-                      DROP TABLE IF EXISTS User;
-                      DROP TABLE IF EXISTS Category;
-                      DROP TABLE IF EXISTS Brand;
-                      DROP TABLE IF EXISTS Color;
-
-                      CREATE TABLE User (
+                      CREATE TABLE IF NOT EXISTS User (
                       user_id INTEGER PRIMARY KEY,
                       user_first_name TEXT,
                       user_last_name TEXT
                       );
 
-                      CREATE TABLE Wardrobe (
+                      CREATE TABLE IF NOT EXISTS Wardrobe (
                       wardrobe_name TEXT PRIMARY KEY
                       );
 
-                      CREATE TABLE Item (
+                      CREATE TABLE IF NOT EXISTS Item (
                       item_id INTEGER PRIMARY KEY,
                       user_id INTEGER REFERENCES User(user_id),
                       item_name TEXT NOT NULL UNIQUE,
@@ -87,6 +80,10 @@ class ItemForm(FlaskForm):
 
 class WardrobeForm(FlaskForm):
     wardrobe_name = StringField("Enter name for your new Wardrobe!")
+    submit = SubmitField("Submit")
+
+class MoveItemForm(FlaskForm):
+    wardrobe_name = SelectField("Select new wardrobe for item", choices = [])
     submit = SubmitField("Submit")
 
 @app.route("/")
@@ -152,21 +149,38 @@ def allItems():
         cur = conn.cursor()
 
         cur.execute("""
-                    SELECT 
-                    item_name, 
-                    wardrobe_name, 
-                    category_name, 
-                    brand_name, 
-                    color_name 
+                    SELECT *
                     FROM Item;
                     """)
         
         rows = cur.fetchall()
     return render_template("all_items.html", rows = rows)
 
-@app.route("/moveItem", methods=["GET", "POST"])
-def moveItem():
-    return render_template("home.html")
+#only route with parameter!
+@app.route("/moveItem/<int:item_id>", methods=["GET", "POST"])
+def moveItem(item_id):
+    form = MoveItemForm()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM Item WHERE item_id = ?", (item_id,))
+        #getting our item
+        item = cur.fetchone()
+
+        wardrobe_names = cur.execute("SELECT wardrobe_name FROM Wardrobe WHERE wardrobe_name != ?", (item['wardrobe_name'],)).fetchall()
+
+        form.wardrobe_name.choices = [(row[0], row[0]) for row in wardrobe_names]
+
+    if form.validate_on_submit():
+        new_wardrobe = form.wardrobe_name.data
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            cur.execute("UPDATE Item SET wardrobe_name = ? WHERE item_id = ?", (new_wardrobe, item_id))
+
+        return redirect(url_for('allItems'))
+
+    return render_template("move_form.html", item = item, form = form)
 
 def getAllWardrobes():
     cur.execute("SELECT * FROM Wardrobe;")
