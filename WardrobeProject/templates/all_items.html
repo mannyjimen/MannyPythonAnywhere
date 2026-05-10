@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Clothing Items</title>
+    <style>        
+        body { font-family: Arial, sans-serif; margin: 12; }
+        table { border-collapse: collapse; width: 50%; }
+        th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        h1 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>All of your clothing items!</h1>
+    <table>
+        <tr>
+            <th>Item Name</th>
+            <th>Wardrobe</th>
+            <th>Category</th>
+            <th>Brand</th>
+            <th>Color</th>
+            <th>Action</th>
+        </tr>
+
+        {% for row in rows %}
+        <tr>
+            <td> {{ row["item_name"]}} </td>
+            <td> {{ row["wardrobe_name"]}} </td>
+            <td> {{ row["category_name"]}} </td>
+            <td> {{ row["brand_name"]}} </td>
+            <td> {{ row["color_name"]}} </td>
+            <td>
+                <a href="{{ url_for('moveItem', item_id = item_id) }}"></a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

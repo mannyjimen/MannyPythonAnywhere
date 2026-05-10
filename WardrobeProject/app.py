@@ -143,8 +143,30 @@ def addWardrobe():
         except sqlite3.IntegrityError:
             return "error: wardrobe with chosen name already exists"
 
-
     return render_template("wardrobe_form.html", form=form)
+
+@app.route("/allItems", methods=["GET", "POST"])
+def allItems():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        cur.execute("""
+                    SELECT 
+                    item_name, 
+                    wardrobe_name, 
+                    category_name, 
+                    brand_name, 
+                    color_name 
+                    FROM Item;
+                    """)
+        
+        rows = cur.fetchall()
+    return render_template("all_items.html", rows = rows)
+
+@app.route("/moveItem", methods=["GET", "POST"])
+def moveItem():
+    return render_template("home.html")
 
 def getAllWardrobes():
     cur.execute("SELECT * FROM Wardrobe;")
