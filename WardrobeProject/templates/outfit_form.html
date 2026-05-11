@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Outfit</title>
+</head>
+<body>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <p>
+            {{ form.outfit_name.label }}
+            {{ form.outfit_name() }}
+        </p>
+
+        <p>
+            {{ form.items.label }} <br>
+            {{ form.items() }} <br>
+
+            <small>hold CTRL/CMD to select multiple items</small>
+        </p>
+
+        <p>{{ form.submit() }}</p>
+    </form>
+
+</body>
+</html>

@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 import sqlite3
 import os
 
-from wtforms import SelectField, StringField, SubmitField, BooleanField
+from wtforms import SelectField, StringField, SubmitField, SelectMultipleField
 from wtforms.validators import DataRequired
 
 app = Flask(__name__)
@@ -28,6 +28,11 @@ def init_db():
 
                       CREATE TABLE IF NOT EXISTS Wardrobe (
                       wardrobe_name TEXT PRIMARY KEY
+                      );
+
+                      CREATE TABLE IF NOT EXISTS Outfit (
+                      outfit_name TEXT,
+                      item_id INTEGER REFERENCES Item(item_id)
                       );
 
                       CREATE TABLE IF NOT EXISTS Item (
@@ -79,12 +84,49 @@ class ItemForm(FlaskForm):
     submit = SubmitField("Submit")
 
 class WardrobeForm(FlaskForm):
-    wardrobe_name = StringField("Enter name for your new Wardrobe!")
+    wardrobe_name = StringField("Enter name for your new Wardrobe!", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
 class MoveItemForm(FlaskForm):
     wardrobe_name = SelectField("Select new wardrobe for item", choices = [])
     submit = SubmitField("Submit")
+
+class OutfitForm(FlaskForm):
+    outfit_name = StringField("Enter name for your new outfit!", validators=[DataRequired()])
+    items = SelectMultipleField("Pick items for this outfit", coerce=int, choices=[])
+    submit = SubmitField("Submit")
+
+@app.route("/createOutfit", methods=["GET", "POST"])
+def createOutfit():
+    form = OutfitForm()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT item_id, item_name FROM Item")
+        rows = cur.fetchall()
+
+    form.items.choices = [(row[0], row[1]) for row in rows]
+
+    if form.validate_on_submit():
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                outfit_name = form.outfit_name.data
+                item_ids = form.items.data
+
+                cur = conn.cursor()
+                for item_id in item_ids:
+                    cur.execute("""
+                                INSERT INTO Outfit
+                                (outfit_name, item_id)
+                                VALUES
+                                (?, ?);
+                                """, (outfit_name, item_id))
+                print("added outfit successfully")
+        except sqlite3.IntegrityError as e:
+            print(f"error: {e}")
+            return "error: outfit with chosen name already exists"
+        return redirect(url_for('home'))
+    return render_template("outfit_form.html", form=form)
 
 @app.route("/")
 def home():
@@ -119,6 +161,8 @@ def addItem():
                 print("added new item successfully")
         except sqlite3.IntegrityError:
             return "error: item with chosen name already exists"
+        return redirect(url_for('home'))
+
     return render_template("form.html", form=form)
 
 
@@ -139,6 +183,7 @@ def addWardrobe():
                 print("added new wardrobe successfully")
         except sqlite3.IntegrityError:
             return "error: wardrobe with chosen name already exists"
+        return redirect(url_for('home'))
 
     return render_template("wardrobe_form.html", form=form)
 
