@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Outfits</title>
+    <style>        
+        body { font-family: Arial, sans-serif; margin: 12; }
+        table { border-collapse: collapse; width: 50%; }
+        th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        h1 { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>All of your outfits!</h1>
+
+    {% for row in outfit_names %}
+    <div>
+        <h4>{{ row['outfit_name'] }}</h4>
+        <ul>
+            {% for entry in all_entries %}
+                {% if entry['outfit_name'] == row['outfit_name'] %}
+                <li>
+                    {{ entry['item_name'] }} 
+                </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</body>
+</html>

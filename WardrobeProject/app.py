@@ -96,38 +96,6 @@ class OutfitForm(FlaskForm):
     items = SelectMultipleField("Pick items for this outfit", coerce=int, choices=[])
     submit = SubmitField("Submit")
 
-@app.route("/createOutfit", methods=["GET", "POST"])
-def createOutfit():
-    form = OutfitForm()
-
-    with sqlite3.connect(DB_PATH) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT item_id, item_name FROM Item")
-        rows = cur.fetchall()
-
-    form.items.choices = [(row[0], row[1]) for row in rows]
-
-    if form.validate_on_submit():
-        try:
-            with sqlite3.connect(DB_PATH) as conn:
-                outfit_name = form.outfit_name.data
-                item_ids = form.items.data
-
-                cur = conn.cursor()
-                for item_id in item_ids:
-                    cur.execute("""
-                                INSERT INTO Outfit
-                                (outfit_name, item_id)
-                                VALUES
-                                (?, ?);
-                                """, (outfit_name, item_id))
-                print("added outfit successfully")
-        except sqlite3.IntegrityError as e:
-            print(f"error: {e}")
-            return "error: outfit with chosen name already exists"
-        return redirect(url_for('home'))
-    return render_template("outfit_form.html", form=form)
-
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -227,9 +195,52 @@ def moveItem(item_id):
 
     return render_template("move_form.html", item = item, form = form)
 
-def getAllWardrobes():
-    cur.execute("SELECT * FROM Wardrobe;")
-    return cur.fetchall()
+@app.route("/createOutfit", methods=["GET", "POST"])
+def createOutfit():
+    form = OutfitForm()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT item_id, item_name FROM Item")
+        rows = cur.fetchall()
+
+    form.items.choices = [(row[0], row[1]) for row in rows]
+
+    if form.validate_on_submit():
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                outfit_name = form.outfit_name.data
+                item_ids = form.items.data
+
+                cur = conn.cursor()
+                for item_id in item_ids:
+                    cur.execute("""
+                                INSERT INTO Outfit
+                                (outfit_name, item_id)
+                                VALUES
+                                (?, ?);
+                                """, (outfit_name, item_id))
+                print("added outfit successfully")
+        except sqlite3.IntegrityError as e:
+            print(f"error: {e}")
+            return "error: outfit with chosen name already exists"
+        return redirect(url_for('home'))
+    return render_template("outfit_form.html", form=form)
+
+@app.route("/allOutfits")
+def allOutfits():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        outfit_names = cur.execute("SELECT DISTINCT outfit_name FROM Outfit").fetchall()
+
+        all_entries = cur.execute("""
+                                  SELECT Outfit.outfit_name, Item.item_name
+                                  FROM Outfit JOIN Item
+                                  ON Outfit.item_id = Item.item_id;
+                                  """).fetchall()
+    return render_template("all_outfits.html", outfit_names = outfit_names, all_entries = all_entries)
 
 if __name__ == "__main__":
     app.run(use_debugger=True)
