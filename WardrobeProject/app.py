@@ -1,4 +1,5 @@
 from flask import Flask, render_template, redirect, url_for
+from flask import session, request
 from flask_wtf import FlaskForm
 
 import sqlite3
@@ -22,17 +23,21 @@ def init_db():
 
                       CREATE TABLE IF NOT EXISTS User (
                       user_id INTEGER PRIMARY KEY,
+                      user_username TEXT UNIQUE NOT NULL,
+                      user_password TEXT NOT NULL,
                       user_first_name TEXT,
                       user_last_name TEXT
                       );
 
                       CREATE TABLE IF NOT EXISTS Wardrobe (
-                      wardrobe_name TEXT PRIMARY KEY
+                      wardrobe_name TEXT PRIMARY KEY,
+                      user_id INTEGER REFERENCES User(user_id)
                       );
 
                       CREATE TABLE IF NOT EXISTS Outfit (
                       outfit_name TEXT,
-                      item_id INTEGER REFERENCES Item(item_id)
+                      item_id INTEGER REFERENCES Item(item_id),
+                      user_id INTEGER REFERENCES User(user_id)
                       );
 
                       CREATE TABLE IF NOT EXISTS Item (
@@ -96,17 +101,62 @@ class OutfitForm(FlaskForm):
     items = SelectMultipleField("Pick items for this outfit", coerce=int, choices=[])
     submit = SubmitField("Submit")
 
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = StringField("Password", validators=[DataRequired()])
+    submit = SubmitField("Login/Sign Up")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+
+        with sqlite3.connect(DB_PATH) as conn:
+            cur = conn.cursor()
+            username_password = cur.execute("SELECT user_id, user_password FROM User WHERE user_username = ?", (username,)).fetchone()
+
+            if username_password:
+                if username_password[1] == password:
+                    session['user_id'] = username_password[0]
+                    session['username'] = username
+                    return redirect(url_for('home'))
+                else:
+                    return "Incorrect password!"
+            else:
+                cur.execute("INSERT INTO User(user_username, user_password) VALUES (?, ?)", (username, password))
+                session['user_id'] = cur.lastrowid
+                session['username'] = username
+                return redirect(url_for('home'))
+
+        return redirect(url_for('home'))
+        
+    return render_template("login.html", form=form)
+    
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route("/")
 def home():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     return render_template("home.html")
 
 @app.route("/addItem", methods=["GET", "POST"])
 def addItem():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     form = ItemForm()
+    user_id = session['user_id']
 
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
-        cur.execute("SELECT wardrobe_name FROM Wardrobe")
+        cur.execute("SELECT wardrobe_name FROM Wardrobe WHERE user_id = ?", (user_id,))
         rows = cur.fetchall()
 
     form.wardrobe_name.choices = [(row[0], row[0]) for row in rows]
@@ -114,7 +164,6 @@ def addItem():
     if form.validate_on_submit():
         try:
             with sqlite3.connect(DB_PATH) as conn:
-                user_id = 0
                 item_name = form.item_name.data
                 wardrobe_name = form.wardrobe_name.data
                 category_name = form.category_name.data
@@ -129,25 +178,28 @@ def addItem():
                 print("added new item successfully")
         except sqlite3.IntegrityError:
             return "error: item with chosen name already exists"
-        return redirect(url_for('home'))
+        return redirect(url_for('allItems'))
 
     return render_template("form.html", form=form)
 
 
 @app.route("/addWardrobe", methods=["GET", "POST"])
 def addWardrobe():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+
     form = WardrobeForm()
 
     if form.validate_on_submit():
         wardrobe_name = form.wardrobe_name.data
-        user_id = 0
         try:
             with sqlite3.connect(DB_PATH) as conn:
                 cur = conn.cursor()
                 cur.execute("""
-                            INSERT INTO Wardrobe (wardrobe_name) 
-                            VALUES (?);
-                            """, (wardrobe_name,))
+                            INSERT INTO Wardrobe (wardrobe_name, user_id) 
+                            VALUES (?, ?);
+                            """, (wardrobe_name, user_id))
                 print("added new wardrobe successfully")
         except sqlite3.IntegrityError:
             return "error: wardrobe with chosen name already exists"
@@ -157,14 +209,19 @@ def addWardrobe():
 
 @app.route("/allItems", methods=["GET", "POST"])
 def allItems():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
         cur.execute("""
                     SELECT *
-                    FROM Item;
-                    """)
+                    FROM Item
+                    WHERE user_id = ?;
+                    """, (user_id,))
         
         rows = cur.fetchall()
     return render_template("all_items.html", rows = rows)
@@ -172,16 +229,20 @@ def allItems():
 #only route with parameter!
 @app.route("/moveItem/<int:item_id>", methods=["GET", "POST"])
 def moveItem(item_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    
     form = MoveItemForm()
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("SELECT * FROM Item WHERE item_id = ?", (item_id,))
+        cur.execute("SELECT * FROM Item WHERE item_id = ? AND user_id = ?", (item_id, user_id))
         #getting our item
         item = cur.fetchone()
 
-        wardrobe_names = cur.execute("SELECT wardrobe_name FROM Wardrobe WHERE wardrobe_name != ?", (item['wardrobe_name'],)).fetchall()
+        wardrobe_names = cur.execute("SELECT wardrobe_name FROM Wardrobe WHERE wardrobe_name != ? AND user_id = ?", (item['wardrobe_name'], user_id)).fetchall()
 
         form.wardrobe_name.choices = [(row[0], row[0]) for row in wardrobe_names]
 
@@ -197,11 +258,15 @@ def moveItem(item_id):
 
 @app.route("/createOutfit", methods=["GET", "POST"])
 def createOutfit():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+
     form = OutfitForm()
 
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
-        cur.execute("SELECT item_id, item_name FROM Item")
+        cur.execute("SELECT item_id, item_name FROM Item WHERE user_id = ?", (user_id,))
         rows = cur.fetchall()
 
     form.items.choices = [(row[0], row[1]) for row in rows]
@@ -216,10 +281,10 @@ def createOutfit():
                 for item_id in item_ids:
                     cur.execute("""
                                 INSERT INTO Outfit
-                                (outfit_name, item_id)
+                                (outfit_name, item_id, user_id)
                                 VALUES
-                                (?, ?);
-                                """, (outfit_name, item_id))
+                                (?, ?, ?);
+                                """, (outfit_name, item_id, user_id))
                 print("added outfit successfully")
         except sqlite3.IntegrityError as e:
             print(f"error: {e}")
@@ -229,17 +294,22 @@ def createOutfit():
 
 @app.route("/allOutfits")
 def allOutfits():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
-        outfit_names = cur.execute("SELECT DISTINCT outfit_name FROM Outfit").fetchall()
+        outfit_names = cur.execute("SELECT DISTINCT outfit_name FROM Outfit WHERE user_id = ?", (user_id,)).fetchall()
 
         all_entries = cur.execute("""
                                   SELECT Outfit.outfit_name, Item.item_name
                                   FROM Outfit JOIN Item
-                                  ON Outfit.item_id = Item.item_id;
-                                  """).fetchall()
+                                  ON Outfit.item_id = Item.item_id
+                                  WHERE Outfit.user_id = ?;
+                                  """, (user_id,)).fetchall()
     return render_template("all_outfits.html", outfit_names = outfit_names, all_entries = all_entries)
 
 if __name__ == "__main__":

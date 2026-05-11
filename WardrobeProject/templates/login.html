@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Login/Sign up</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.username.label }} <br>
+            {{ form.username() }}
+        </div>
+
+        <div>
+            {{ form.password.label }} <br>
+            {{ form.password() }}
+        </div>
+
+        <div>
+            {{ form.submit() }}
+        </div>
+
+        <p> If you do not have an account, one will be created for you! </p>
+    </form>
+</body>
+</html>
