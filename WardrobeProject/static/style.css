@@ -1,0 +1,25 @@
+body {
+    background-color: darkgray;
+    color:black;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-left: 3%;
+}
+
+.subheader {
+    font-weight: 1000;
+    font-size: 30px;
+}
+
+table { 
+    border-collapse: collapse; width: 50%; 
+}
+
+th, td {   
+    border: 1px solid #444;
+    padding: 8px 12px; 
+    text-align: left; 
+}
+        
+th { 
+    background-color:darkslategrey; 
+}

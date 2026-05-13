@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Login/Sign up</h1>
+    <h2 class="subheader">Login/Sign up</h2>
     <form method="POST">
         {{ form.hidden_tag() }}
 

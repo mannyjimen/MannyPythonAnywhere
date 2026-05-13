@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add a Wardrobe!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Enter name for wardrobe here:</h2>
+    <h2 class="subheader">Create a new wardrobe!</h2>
 
     <form method="POST">
         {{ form.hidden_tag() }}

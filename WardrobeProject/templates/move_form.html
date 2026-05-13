@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move item</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Moving item: {{ item.item_name }}</h2>
+    <h2 class="subheader">Moving item: {{ item.item_name }}</h2>
 
     <form method="POST">
         {{ form.hidden_tag() }}
